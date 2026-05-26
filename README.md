@@ -235,3 +235,124 @@ Built to explore:
 * Real-time AI operations platforms
 
 ---
+# Python Prototype Code
+
+This is a simplified backend prototype for the AI Hospital Workflow Manager.  
+It simulates hospital data, detects bottlenecks, prioritizes patients, allocates beds, and generates AI-style recommendations.
+
+```python
+from dataclasses import dataclass
+from typing import List
+
+
+@dataclass
+class Patient:
+    patient_id: int
+    name: str
+    severity: int
+    department: str
+    wait_time: int
+
+
+@dataclass
+class Bed:
+    bed_id: int
+    ward: str
+    is_available: bool
+
+
+class TriageAgent:
+    def prioritize_patients(self, patients: List[Patient]):
+        return sorted(
+            patients,
+            key=lambda p: (p.severity, p.wait_time),
+            reverse=True
+        )
+
+
+class BedAllocationAgent:
+    def allocate_bed(self, patient: Patient, beds: List[Bed]):
+        for bed in beds:
+            if bed.is_available:
+                bed.is_available = False
+                return f"Allocated {bed.ward} bed #{bed.bed_id} to {patient.name}"
+        return f"No beds available for {patient.name}"
+
+
+class WorkflowMonitorAgent:
+    def detect_bottlenecks(self, patients: List[Patient]):
+        alerts = []
+
+        er_patients = [p for p in patients if p.department == "ER"]
+
+        if len(er_patients) > 3:
+            alerts.append("High ER patient inflow detected")
+
+        avg_wait = sum(p.wait_time for p in patients) / len(patients)
+
+        if avg_wait > 30:
+            alerts.append("Average patient wait time is too high")
+
+        return alerts
+
+
+class HospitalWorkflowManager:
+    def __init__(self, patients: List[Patient], beds: List[Bed]):
+        self.patients = patients
+        self.beds = beds
+        self.triage_agent = TriageAgent()
+        self.bed_agent = BedAllocationAgent()
+        self.monitor_agent = WorkflowMonitorAgent()
+
+    def run(self):
+        print("\nAI Hospital Workflow Manager Started\n")
+
+        alerts = self.monitor_agent.detect_bottlenecks(self.patients)
+
+        print("System Alerts:")
+        if alerts:
+            for alert in alerts:
+                print(f"- {alert}")
+        else:
+            print("- No major bottlenecks detected")
+
+        print("\nPatient Priority Queue:")
+        priority_queue = self.triage_agent.prioritize_patients(self.patients)
+
+        for patient in priority_queue:
+            print(
+                f"- {patient.name} | Severity: {patient.severity} | "
+                f"Wait Time: {patient.wait_time} mins"
+            )
+
+        print("\nBed Allocation:")
+        for patient in priority_queue[:3]:
+            result = self.bed_agent.allocate_bed(patient, self.beds)
+            print(f"- {result}")
+
+        print("\nAI Recommendations:")
+        if alerts:
+            print("- Open additional triage desk")
+            print("- Reassign available staff to ER")
+            print("- Prioritize high-severity patients")
+        else:
+            print("- Continue current workflow monitoring")
+
+
+if __name__ == "__main__":
+    patients = [
+        Patient(1, "Patient A", severity=9, department="ER", wait_time=45),
+        Patient(2, "Patient B", severity=6, department="ER", wait_time=35),
+        Patient(3, "Patient C", severity=8, department="ICU", wait_time=20),
+        Patient(4, "Patient D", severity=4, department="ER", wait_time=50),
+        Patient(5, "Patient E", severity=7, department="General", wait_time=25),
+    ]
+
+    beds = [
+        Bed(101, "ICU", True),
+        Bed(102, "Emergency", True),
+        Bed(201, "General Ward", True),
+    ]
+
+    manager = HospitalWorkflowManager(patients, beds)
+    manager.run()
